@@ -1,0 +1,223 @@
+---
+title: "HW2 - Programming in Base R"
+author: "Kevin Krupa"
+format: html
+editor: visual
+---
+
+# Task 1: Basic Vector Practice
+
+We are told we have data from a medical experiment on blood pressure with 20 subjects. The following will be a vector of the 20 pre-treatment blood pressure values
+
+```{r}
+pre_trt <- c(130, 128, 116, 124, 133, 134, 118, 126, 114, 127, 131, 138, 128, 140,
+            137, 131, 120, 128, 129, 135)
+pre_trt
+```
+Now that we have successfully create our pre-treatment vector, we will now create another vector that holds the post treatment blood pressure values of all 20 patients (note: subject *i* will be denoted by index *i*, i.e. subject 1 will be index 1 in both vectors)
+
+```{r}
+post_trt <- c(114, 98, 113, 99, 107, 116, 113, 111, 119, 117, 101, 119, 130, 122,
+             106, 106, 124, 102, 117, 113)
+post_trt
+```
+
+We have successfully created both pre/post treatment vectors. Now we will assign the values in each vector to a specific subject. This will be done using the `names()` and `paste()` functions.
+
+```{r}
+subject_names <- paste("Subject", 1:20, sep = "_")
+
+names(pre_trt) <- subject_names
+pre_trt
+
+names(post_trt) <- subject_names
+post_trt
+```
+Next, we are going to calculate the change in blood pressure for each patient. This will be done by subtracting the pots-treatment values from the pre-treatment values. This will be saved in a new vector
+
+```{r}
+bp_change <- pre_trt - post_trt
+bp_change
+```
+Since we now have the change in blood pressure for each subject, we now want to know that average change in blood pressure across all patients. This can be done using the `mean()` function.
+
+```{r}
+avg_bp_change <- mean(bp_change)
+paste("Average Change in Blood Pressure:", avg_bp_change)
+```
+Next, we want to know which subjects experienced a decrease in blood pressure after the treatment. We can use the `which()` function to return the indices (and names) to find such subjects
+
+```{r}
+bp_decrease <- which(bp_change > 0)
+cat("Subjects that experienced a decrease in blood pressure: \n", names(bp_decrease))
+```
+
+Now, we want to subset the **bp_change** vector (vector of differences) to only include those that have a positive change
+
+```{r}
+pos_change <- bp_change[c(1:8, 10:12, 14:16, 18:20)]
+pos_change
+```
+We now know which subjects experienced a positive change in blood pressure, and we want to know what the average of the positive changes are
+
+```{r}
+avg_pos_change <- mean(pos_change)
+paste("Average BP change for subjects who experienced decrease in blood pressure:",
+      avg_pos_change)
+```
+
+# Task 2: Basic Data Frame Practice
+
+Continuing on with the vectors we had created above, we want to make a data frame from them. The data frame will have four columns: patient, pre_bp, post_bp, and diff_bp.
+
+```{r}
+bp_df <- data.frame(subject_names, pre_trt, post_trt, bp_change, row.names = NULL)
+colnames(bp_df) <- c("patient", "pre_bp", "post_bp", "diff_bp")
+head(bp_df)
+```
+
+Now, we only want to return rows where the *diff_bp* column is negative. We will accomplish this using the `subset()` function.
+
+```{r}
+neg_diff_bp <- subset(bp_df, diff_bp < 0)
+neg_diff_bp
+```
+
+Taking this new data frame, we want to add a new column. This new column will take `TRUE`, if the post_bp value is less than 120, and `FALSE` otherwise.
+
+```{r}
+bp_df$bp_lt_120 <- bp_df$post_bp < 120
+```
+
+Now, we will print the data frame out nicely using `knitr::kable(bp_df)`
+
+```{r}
+knitr::kable(bp_df)
+```
+
+
+# Task 3: List Practice
+
+We are given new data from a different experiment where the 'treatment' is actually a placebo. We will create a new data frame of this data that looks similar to the one we created in Task 2.
+
+```{r}
+pre_trt_placebo <- c(138, 135, 147, 117, 152, 134, 114, 121, 131, 130)
+post_trt_placebo <- c(105, 136, 123, 130, 134, 143, 135, 139, 120, 124)
+bp_diff_placebo <- pre_trt_placebo - post_trt_placebo
+subject_names_placebo <- paste("Subject", 1:10, sep = "_")
+
+placebo_df <- data.frame(subject_names_placebo, pre_trt_placebo, post_trt_placebo, bp_diff_placebo)
+colnames(placebo_df) <- c("patient", "pre_bp", "post_bp", "diff_bp")
+placebo_df$post_bp_lt_120 <- placebo_df$post_bp < 120
+```
+
+Now that we have successfully created a new data frame like the one created in Task 2, we will create a list that stores both of the data frames.
+
+```{r}
+my_list <- list(treatment = bp_df, placebo = placebo_df)
+```
+
+Next, we are going to access the first list element using three different types of syntax.
+
+```{r}
+my_list[1]
+my_list[[1]]
+str(my_list[1])
+```
+
+Now, I want to access the placebo data frame from that list, and only look at the pre_bp column from that data frame. We will do this in one line
+
+```{r}
+my_list[[2]][2]
+```
+
+# Task 4: Control Flow Practice
+
+We want to characterize the post-treatment (or placebo) blood pressure measurements as optimal ($\leq$ 120), borderline (120 $\lt$ *bp* $\leq$ 130), and high ($\gt$ 130). We will do this by first creating a new column in each data frame above called status.
+
+```{r}
+my_list[[1]]$status <- character(20)
+my_list[[2]]$status <- character(10)
+```
+
+For the non-placebo data set (i.e, the first element of our list), we want to run a for loop that assigns the values of the status column using if/then/else logic
+
+```{r}
+for (index in 1:20) {
+  if (my_list[[1]][[3]][index] <= 120) {
+    my_list[[1]][[6]][index] = "optimal"
+  } else if (my_list[[1]][[3]][index] > 120 & my_list[[1]][[3]][index] <= 130) {
+    my_list[[1]][[6]][index] = "borderline"
+  } else {
+    my_list[[1]][[6]][index] = "high"
+  }
+}
+```
+
+Now, we are going to repeat the same, but for the placebo dataset
+
+```{r}
+for (index in 1:10) {
+  if (my_list[[2]][[3]][index] <= 120) {
+    my_list[[2]][[6]][index] = "optimal"
+  } else if (my_list[[2]][[3]][index] > 120 & my_list[[2]][[3]][index] <= 130) {
+    my_list[[2]][[6]][index] = "borderline"
+  } else {
+    my_list[[2]][[6]][index] = "high"
+  }
+}
+```
+
+We will look at the data frames to make sure our loops worked.
+
+```{r}
+knitr::kable(my_list[[1]])
+knitr::kable(my_list[[2]])
+```
+
+# Task 5: Function Writing
+
+In this section, we are going to write our own function. This function will take in a list with two data frames (trt and placebo data frame) as an argument, with no default values. The next argument will be a R function that find a summary of a numeric column, and will have a default value of "mean". The function will find the statistic of interest (defined by the R function argument) for the pre, post, and diff columns of both data frames. These values will be returned as a named list with meaningful names. 
+
+```{r}
+Stat_Function = function(list, stat = "mean") {
+  #Make sure the user inputs a list of length 2
+  if (!is.list(list) || length(list) != 2) {
+    stop("First argument must be a list of length two")
+  }
+  #Make sure the user inputs a list containing two data frames
+  if (!is.data.frame(list[[1]]) || !is.data.frame(list[[2]])) {
+    stop("Both elements of the list need to be a data frame")
+  }
+  treatment   <- list[[1]] #Obtain the first data frame 
+  placebo     <- list[[2]] #Obtain the second data frame
+  my_fun      <- get(stat) #Obtain the statistic function we want
+  #Store the statistic generated on the numeric columns from each data frame
+  trt_pre_bp  <- my_fun(treatment$pre_bp)
+  trt_post_bp <- my_fun(treatment$post_bp)
+  trt_diff_bp <- my_fun(treatment$diff_bp)
+  pla_pre_bp  <- my_fun(placebo$pre_bp)
+  pla_post_bp <- my_fun(placebo$post_bp)
+  pla_diff_bp <- my_fun(placebo$diff_bp)
+  #Create a vector that contains the six values
+  stat_vector <- c(trt_pre_bp, trt_post_bp, trt_diff_bp, pla_pre_bp, pla_post_bp, pla_diff_bp)
+  #Create names for the vector, based on the statistic passed
+  names(stat_vector) <- c(paste("Pre Trt BP", stat),
+                         paste("Post Trt BP", stat),
+                         paste("Trt Diff in BP", stat),
+                         paste("Pre Placebo BP", stat),
+                         paste("Post Placebo BP", stat),
+                         paste("Placebo Diff in BP", stat))
+  return(stat_vector)
+}
+```
+
+Now, we are going to test to see if our function works for different statistics. The statistics we will try to find are the variance, standard deviation, minimum, and maximum.
+
+```{r}
+Stat_Function(my_list, "var")
+Stat_Function(my_list, "sd")
+Stat_Function(my_list, "min")
+Stat_Function(my_list, "max")
+```
+
